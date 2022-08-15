@@ -1,0 +1,1673 @@
+
+---
+title: "Exam: STA 380: Introduction to Machine Learning"
+author: "Snehal Naravane (sn27429)"
+date: "8/15/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r include = FALSE}
+
+library(dplyr)
+library(ggplot2)
+
+library(tidyverse)
+library(igraph)
+# install.packages("arules")
+library(arules)  # has a big ecosystem of packages built around it
+# install.packages("arulesViz")
+library(arulesViz)
+
+
+# install.packages("ggcorrplot")
+library(ggcorrplot)
+
+
+
+# install.packages("gtools")
+library(gtools)
+# install.packages("ClusterR")
+library(ClusterR)  # for kmeans++
+library(foreach)
+library(mosaic)
+
+library(lubridate)
+
+
+# install.packages("quantmod")
+library(quantmod)
+
+
+library(tm) 
+library(magrittr)
+library(slam)
+library(proxy)
+# install.packages("tidytext")
+library(tidytext)
+# install.packages("textstem")
+library(textstem)
+
+
+```
+
+
+
+
+```{r include = FALSE}
+
+# Question 1
+# Probability practice
+
+```
+
+
+```{r include = FALSE}
+# Part A. Visitors to your website are asked to answer a single survey question before they get access to the content on the page. Among all of the users, there are two categories: 
+# Random Clicker (RC), and Truthful Clicker (TC). There are two possible answers to the survey: yes and no. Random clickers would click either one with equal probability. You are also giving the information that the expected fraction of random clickers is 0.3. After a trial period, you get the following survey results: 65% said Yes and 35% said No. What fraction of people who are truthful clickers answered yes? Hint: use the rule of total probability.
+
+
+p_y_rc = 0.5
+
+p_rc = 0.3
+
+p_y = 0.65
+
+# p_y_tc = ?
+
+# p(y) = p(y,tc) + p(y,rc)
+# p(y) = p(tc)*p(y|tc) + p(rc)*p(y|rc)
+# 0.65 = 0.70 * p(y|tc) + 0.30 * 0.50
+# 0.65 = 0.70 * p(y|tc) + 0.15
+# 0.70 * p(y|tc) = 0.65 - 0.15
+# 0.70 * p(y|tc) = 0.50
+# p(y|tc) = 0.50/0.70
+# p(y|tc) = 0.7143
+# 0.7142857
+
+
+p_y_tc = ((0.65 - (0.30*0.50)) / 0.70)
+# p_y_tc
+
+p_y_tc_perc = round((p_y_tc * 100),2)
+# p_y_tc_perc
+
+
+```
+
+```{r echo = FALSE}
+
+cat(paste(p_y_tc_perc, "% of people who are truthful clickers answered yes."))
+
+```
+
+
+
+```{r include = FALSE}
+# Part B. Imagine a medical test for a disease with the following two attributes:
+# 
+# The sensitivity is about 0.993. That is, if someone has the disease, there is a probability of 0.993 that they will test positive.
+# The specificity is about 0.9999. This means that if someone doesn't have the disease, there is probability of 0.9999 that they will test negative.
+# In the general population, incidence of the disease is reasonably rare: about 0.0025% of all people have it (or 0.000025 as a decimal probability).
+# Suppose someone tests positive. What is the probability that they have the disease?
+
+# p_pos_yes = 0.993
+# 
+# p_neg_no = 0.9999
+# 
+# p_yes = 0.000025
+
+# # p_yes_pos = ?
+# 
+#                     Disease?
+#                     
+#               0.000025     (0.999975 = 1 - 0.000025)
+#                     
+#             Yes                 No
+#                   
+#       0.993     0.007       0.0001     0.9999
+#             
+#       Pos       Neg       Pos             Neg
+
+
+# p(pos) = p(pos, yes) + p(pos, no)
+# p(pos) = p(yes) * p(pos|yes) + p(no) * p(pos|no)
+# p(pos) = 0.000025 * 0.993 + 0.999975 * 0.0001
+# p(pos) = 0.000024825 + 0.0000999975
+# p(pos) = 0.0001248225
+# 
+# 
+# p(yes) = p(yes, pos) + p(yes, neg)
+# p(yes) = p(pos) * p(yes|pos) + p(neg) * p(yes|neg)
+# 0.000025 = 0.0001248225 * p(yes|pos) + (1 - 0.0001248225) * p(yes|neg)
+# 0.000025 = 0.0001248225 * p(yes|pos) + 0.9998751775 * p(yes|neg)
+
+# p(yes, neg) = p(yes|neg) * p(neg) = p(neg|yes) * p(yes)
+# p(yes|neg) = p(neg|yes) * p(yes) / p(neg)
+
+# 0.000025 = 0.0001248225 * p(yes|pos) + 0.9998751775 * p(yes|neg)
+# 0.000025 = 0.0001248225 * p(yes|pos) + 0.9998751775 * p(neg|yes) * p(yes) / p(neg)
+
+# 0.000025 = 0.0001248225 * p(yes|pos) + 0.9998751775 * 0.007 * 0.000025 / (1 - 0.0001248225)
+# 0.000025 = 0.0001248225 * p(yes|pos) + 0.9998751775 * 0.007 * 0.000025 / (0.9998751775)
+# 0.000025 = 0.0001248225 * p(yes|pos) + 0.9998751775 * 0.007 * 0.000025 / (0.9998751775)
+# 0.000025 = 0.0001248225 * p(yes|pos) + 0.000000175
+# 0.0001248225 * p(yes|pos) = 0.000025 - 0.000000175
+# 0.0001248225 * p(yes|pos) = 0.000024825
+# p(yes|pos) = 0.000024825 / 0.0001248225
+# p(yes|pos) = 0.1988824130264976
+
+
+
+
+
+```
+
+
+```{r echo = FALSE}
+
+cat("The probability that they have the disease given that they test postitive is 19.89%")
+
+```
+
+
+
+```{r include = FALSE}
+
+# Question 2
+# Wrangling the Billboard Top 100
+# Consider the data in billboard.csv containing every song to appear on the weekly Billboard Top 100 chart since 1958, up through the middle of 2021. Each row of this data corresponds to a single song in a single week. For our purposes, the relevant columns here are:
+# 
+# performer: who performed the song
+# song: the title of the song
+# year: year (1958 to 2021)
+# week: chart week of that year (1, 2, etc)
+# week_position: what position that song occupied that week on the Billboard top 100 chart.
+# Use your skills in data wrangling and plotting to answer the following three questions.
+
+
+billboard_data = read.csv('billboard.csv')
+attach(billboard_data)
+billboard_df = data.frame(billboard_data)
+# billboard_df
+# head(billboard_df)
+
+```
+
+
+```{r include = FALSE}
+
+# Part A: Make a table of the top 10 most popular songs since 1958, as measured by the total number of weeks that a song spent on the Billboard Top 100. Note that these data end in week 22 of 2021, so the most popular songs of 2021 will not have up-to-the-minute data; please send our apologies to The Weeknd.
+# 
+# Your table should have 10 rows and 3 columns: performer, song, and count, where count represents the number of weeks that song appeared in the Billboard Top 100. Make sure the entries are sorted in descending order of the count variable, so that the more popular songs appear at the top of the table. Give your table a short caption describing what is shown in the table.
+# 
+# (Note: you'll want to use both performer and song in any group_by operations, to account for the fact that multiple unique songs can share the same title.)
+
+unique_songs = unique(billboard_df$song_id)
+# unique_songs
+typeof(unique_songs)
+# unique_songs[1000]
+unique_songs_len = length(unique_songs)
+# length(unique_songs[1000])
+
+uniq_song_cnt = list()
+
+for (song_iter in (1: unique_songs_len))
+{
+  # print(unique_songs[song_iter])
+  uniq_song_cnt[song_iter] = length(which(billboard_df$song_id==unique_songs[song_iter]))
+}
+
+# uniq_song_cnt
+
+# uniq_song_df = data.frame()
+# uniq_song_df$uniqsong = unique_songs
+
+# # uniq_song_df = rbind(data.frame(unique_songs), data.frame(uniq_song_cnt))
+# uniq_song_df = do.call(rbind, Map(data.frame, A=unique_songs, B=uniq_song_cnt))
+# uniq_song_df
+
+uniq_song_df_temp = do.call(rbind, Map(data.frame, A=uniq_song_cnt, B= unique_songs))
+# uniq_song_df_temp
+
+uniq_song_df = uniq_song_df_temp[, c(2,1)]
+# uniq_song_df
+
+colnames(uniq_song_df) = c("song_id", "count")
+
+uniq_song_df_sorted = uniq_song_df[order(uniq_song_df$count, decreasing = TRUE),]
+
+top10_pop_songs = uniq_song_df_sorted[1:10,]
+# top10_pop_songs
+
+rownames(top10_pop_songs) = 1:nrow(top10_pop_songs)
+
+
+# top10_pop_songs_final_df = merge(top10_pop_songs, billboard_df, by = "song_id")
+
+
+
+
+billboard_df_songs_1 = billboard_df[c('song', 'performer', 'song_id')]
+
+billboard_df_songs = billboard_df_songs_1[!duplicated(billboard_df[,c('song', 'performer', 'song_id')]),]
+
+top10_pop_songs_num = nrow(top10_pop_songs)
+
+top10_pop_songs$song = NA
+top10_pop_songs$performer = NA
+
+billboard_df_songs_num = nrow(billboard_df_songs)
+
+
+for (iter_top in 1:top10_pop_songs_num){
+  # print(iter_top)
+  # print(top10_pop_songs[iter_top,])
+  cnt = 0
+  # print(cnt)
+
+  for (iter_songs in 1:billboard_df_songs_num) {
+    if ((billboard_df_songs$song_id[iter_songs] == top10_pop_songs$song_id[iter_top]) & (cnt == 0)){
+      
+      cnt = 1
+      top10_pop_songs$performer[iter_top] = billboard_df_songs$performer[iter_songs]
+      top10_pop_songs$song[iter_top] = billboard_df_songs$song[iter_songs]
+    }
+
+  }
+
+}
+
+
+top10_pop_songs_final = top10_pop_songs[, c(4,3,2)]
+# top10_pop_songs_final
+
+
+
+
+
+
+
+
+#########################
+
+ 
+
+#  
+# billboard_df_2_dat = billboard_df_2 %>% group_by(performer, song, song_id) %>%
+#                    summarise(mean_Sales = mean(Sales),
+#                              mean_Profit = mean(Profit),
+#                              .groups = 'drop')
+#  
+# View(df_grp_reg_cat)
+
+
+
+```
+
+
+```{r echo = FALSE}
+
+cat("The top 10 most popular songs since 1958 are as below:")
+print(top10_pop_songs_final)
+
+```
+
+
+```{r include = FALSE}
+# Part B: Is the "musical diversity" of the Billboard Top 100 changing over time? Let's find out. We'll measure the musical diversity of given year as the number of unique songs that appeared in the Billboard Top 100 that year. Make a line graph that plots this measure of musical diversity over the years. The x axis should show the year, while the y axis should show the number of unique songs appearing at any position on the Billboard Top 100 chart in any week that year. For this part, please filter the data set so that it excludes the years 1958 and 2021, since we do not have complete data on either of those years. Give the figure an informative caption in which you explain what is shown in the figure and comment on any interesting trends you see.
+# 
+# There are number of ways to accomplish the data wrangling here. We offer you two hints on two possibilities:
+# 
+# You could use two distinct sets of data-wrangling steps. The first set of steps would get you a table that counts the number of times that a given song appears on the Top 100 in a given year. The second set of steps operate on the result of the first set of steps; it would count the number of unique songs that appeared on the Top 100 in each year, irrespective of how many times it had appeared.
+# You could use a single set of data-wrangling steps that combines the length and unique commands.
+
+
+
+billboard_df_2 = billboard_df
+billboard_df_filtered <- billboard_df_2[((billboard_df_2$year!=1958) & (billboard_df_2$year!=2021)),]
+# billboard_df_filtered
+
+
+billboard_df_filtered_grp = billboard_df_filtered %>% 
+  group_by(year) %>% 
+  arrange(song, song_id, performer)
+
+
+billboard_df_filtered_grp_sel = billboard_df_filtered_grp[c('year', 'week', 'song_id')]
+
+
+
+# billboard_df_filtered_grp_sel2 = billboard_df_filtered_grp %>%
+#     group_by(year) %>%
+#     summarise(count=n())
+
+
+billboard_df_filtered_grp_sel2 = billboard_df_filtered_grp %>%
+    group_by(year) %>%
+    summarise(count=n_distinct(song_id))
+
+billboard_df_filtered_grp_sel3 = billboard_df_filtered_grp %>%
+    group_by(year, song_id) %>%
+    summarise(count=n(), .groups = 'keep')
+
+
+# write.csv(billboard_df_filtered_grp_sel3, "billboard_df_filtered_grp_sel3.csv", row.names=FALSE)
+
+temp1 = billboard_df_filtered_grp_sel3[c('year', 'song_id')]
+
+temp2 = temp1 %>%
+    group_by(year, song_id) %>%
+    summarise(count=n(), .groups = 'keep')
+
+# write.csv(temp2,"temp2.csv",row.names=FALSE)
+
+temp3 = temp2[temp2$count==1,]
+
+# write.csv(temp3,"temp3.csv",row.names=FALSE)
+
+temp4 = temp3 %>%
+    group_by(year) %>%
+    summarise(count=n(), .groups = 'keep')
+
+plot_data = temp4
+
+```
+
+
+```{r echo = FALSE}
+
+plot(plot_data$year, plot_data$count, type = 'l')
+
+# billboard_df_fil_grp_sel3_vals = temp1[temp1$count==1,]
+
+```
+
+
+
+```{r include = FALSE}
+
+# Part C: Let's define a "ten-week hit" as a single song that appeared on the Billboard Top 100 for at least ten weeks. There are 19 artists in U.S. musical history since 1958 who have had at least 30 songs that were "ten-week hits." Make a bar plot for these 19 artists, showing how many ten-week hits each one had in their musical career. Give the plot an informative caption in which you explain what is shown.
+# 
+# Notes:
+# 
+# You might find this easier to accomplish in two distinct sets of data wrangling steps.
+# Make sure that the individuals names of the artists are readable in your plot, and that they're not all jumbled together. If you find that your plot isn't readable with vertical bars, you can add a coord_flip() layer to your plot to make the bars (and labels) run horizontally instead.
+# By default a bar plot will order the artists in alphabetical order. This is acceptable to turn in. But if you'd like to order them according to some other variable, you can use the fct_reorder function, described in this blog post. This is optional.
+
+
+billboard_df_3 = billboard_df
+
+billboard_df_3_grp = billboard_df_3 %>%
+    group_by(song_id, performer) %>%
+    summarise(count=n(), .groups = 'keep')
+
+
+billboard_df_3_grp_ord = billboard_df_3_grp[order(billboard_df_3_grp$count, decreasing = TRUE), ]
+# billboard_df_3_grp_ord
+
+billboard_df_3_grp_ord_fin = billboard_df_3_grp_ord[billboard_df_3_grp_ord$count>=10,]
+
+# billboard_df_3b = billboard_df_3 %>%
+#     group_by(performer) %>%
+#     summarise(count=n(), .groups = 'keep')
+
+# billboard_df_3c = billboard_df_3b[billboard_df_3b$count>=30,]
+
+
+billboard_df_3b1 = billboard_df_3_grp_ord_fin[c('performer', 'song_id')]
+
+billboard_df_3b2 = billboard_df_3b1 %>%
+    group_by(performer) %>%
+    summarise(count=n(), .groups = 'keep')
+
+
+billboard_df_3b2_ord = billboard_df_3b2[order(billboard_df_3b2$count, decreasing = TRUE), ]
+# billboard_df_3b2_ord
+
+billboard_df_3b2_ord_fin = billboard_df_3b2_ord[billboard_df_3b2_ord$count>=30,]
+
+
+
+```
+
+
+```{r echo = FALSE}
+
+# plot(billboard_df_3b2_ord_fin$performer, billboard_df_3b2_ord_fin$count)
+
+ggplot(billboard_df_3b2_ord_fin)+
+        geom_col(aes(x = performer, 
+                     y = count),
+                 fill = "blue",
+                 width = 0.5)+
+        theme_classic() +
+        ggtitle("Number of 10-week hits for top performers",
+                subtitle = "Performers with more than 30 songs")+
+        labs(x = "Performer",
+             y = "Number of 10-week hits")+
+        theme(axis.title = element_text(size = 7, face = "bold"),
+              axis.text = element_text(size = 7),
+              plot.title = element_text(size = 10, hjust = 0.5),
+              plot.subtitle = element_text(size = 7, hjust= 0.5))+
+  scale_x_discrete(guide = guide_axis(angle = 90))
+
+
+
+
+```
+
+
+```{r include = FALSE}
+# Question 3
+# Visual story telling part 1: green buildings
+
+green_data = read.csv("greenbuildings.csv")
+head(green_data)
+green_data_summ = summary(green_data)
+str(green_data)
+green_data_dim = dim(green_data)
+```
+
+
+```{r echo = FALSE}
+cat("The summary statitics of the green buildings data is as below:")
+green_data_summ
+```
+
+
+
+```{r include = FALSE}
+
+green_data_leasRate_summ = summary(green_data$leasing_rate)
+green_data_leasRate_qnt = quantile(green_data$leasing_rate, 0.0272)
+# 2.72%
+# 10.40064
+```
+
+```{r echo = FALSE}
+cat("The summary statitics of the leasing rate (occupancy) of the green buildings data is as below:\n")
+green_data_leasRate_summ
+
+cat("\n")
+
+cat("The 2.72% quantile of the leasing rate (occupancy) of the green buildings data is:\n")
+green_data_leasRate_qnt
+
+```
+
+
+
+```{r echo = FALSE}
+green_clean = green_data %>% filter(leasing_rate > 10)
+green_clean_dim = dim(green_clean)
+
+
+green_clean %>% filter(leasing_rate >= 10)%>% group_by(green_rating) %>% summarise(med_rent = median(Rent), count = n())
+
+
+ggplot(green_clean, aes(group = green_rating, Rent)) + geom_boxplot()
+
+ggplot(green_clean, aes(leasing_rate, Rent, color = green_rating)) + geom_point()
+
+
+ggplot(green_clean, aes(age, leasing_rate, color = green_rating)) + geom_point()
+
+
+green_clean %>% group_by(green_rating, amenities) %>% summarise(med_rent = median(Rent), count = n())
+ggplot(green_clean, aes(stories, Rent, color = green_rating)) + geom_point()
+
+
+green_clean %>% group_by(green_rating) %>% summarise(med_stories = median(stories))
+ggplot(green_clean, aes(size, Rent, color = green_rating)) + geom_point()
+
+
+green_clean %>% group_by(green_rating)%>%
+summarize(med_size = median(size), mean_size = mean(size))
+
+
+green_clean %>% group_by(green_rating) %>% summarise(med_age = median(age), count = n())
+ggplot(green_clean, aes(age, Rent, color = green_rating)) + geom_point()
+
+
+
+
+green_clean$revenue = 1.000*(green_clean$size * green_clean$Rent * green_clean$leasing_rate)/100
+summary(green_clean$revenue)
+
+ggplot(green_clean, aes(cluster, Rent, color = green_rating)) + geom_point()
+
+green_clean %>% filter(cluster>=430 & cluster<=600) %>% group_by(green_rating) %>%summarise(med = median(Rent), count = n())
+```
+
+
+```{r include = FALSE}
+green_Green = green_clean %>% filter(green_rating == 1)
+green_Green_dim = dim(green_Green)
+green_Green_summ = summary(green_Green)
+green_Green_rent_summ = summary(green_Green$Rent)
+# green_Green_rent_med = green_Green_rent_summ[3]
+green_Green_rent_med = median(green_Green$Rent)
+
+green_NotGreen = green_clean %>% filter(green_rating == 0)
+green_NotGreen_dim = dim(green_NotGreen)
+green_NotGreen_summ = summary(green_NotGreen)
+green_NotGreen_rent_summ = summary(green_NotGreen$Rent)
+# green_NotGreen_rent_med = green_NotGreen_rent_summ[3]
+green_NotGreen_rent_med = median(green_NotGreen$Rent)
+
+Green_NotGreen_medRentDiff = green_Green_rent_med - green_NotGreen_rent_med
+
+```
+
+
+```{r echo = FALSE}
+
+cat(paste("The median market rent for green buildings is $", green_Green_rent_med, " per square foot per year while the median market rent for green buildings is $", green_NotGreen_rent_med, " per square foot per year.", sep = ""))
+cat("\n\n")
+cat(paste("Hence, green buildings have median rents of $", Green_NotGreen_medRentDiff, " per square foot per year more.", sep = ""))
+
+
+```
+
+
+
+```{r include = FALSE}
+OurBldgArea_sqft = 250000
+
+GreenMoreRent = OurBldgArea_sqft * Green_NotGreen_medRentDiff
+
+baseConstCosts = 100000000
+ConstCostsPrem = 0.05
+ExtraSpend = baseConstCosts * ConstCostsPrem
+
+
+YearsForBE_100 = ExtraSpend/GreenMoreRent
+
+YearsForBE_90 = ExtraSpend/(GreenMoreRent*0.90)
+
+
+Profit_30Y = GreenMoreRent * (30-round(YearsForBE_90,0))
+
+```
+
+
+
+
+```{r include = FALSE}
+# Question 4
+# Visual story telling part 2: Capital Metro data
+
+capmet = read.csv("capmetro_UT.csv")
+
+head(capmet)
+summary(capmet)
+dim(capmet)
+capmet_rows = dim(capmet)[1]
+capmet_cols = dim(capmet)[2]
+
+capmet_num = capmet
+
+
+week_days = unique(capmet_num$day_of_week)
+week_days_len = length(week_days)
+
+# capmet_num %>%
+#   select(day_of_week) %>%
+#   mutate(
+#     case_when(
+#       day_of_week == week_days[1] ~ 1,
+#       day_of_week == week_days[2] ~ 2,
+#       day_of_week == week_days[3] ~ 3,
+#       day_of_week == week_days[4] ~ 4,
+#       day_of_week == week_days[5] ~ 5,
+#       day_of_week == week_days[6] ~ 6,
+#       day_of_week == week_days[7] ~ 7
+#     )
+#   )
+
+
+for (items in (1: capmet_rows)){
+  if (capmet_num$day_of_week[items] == week_days[1]){
+    capmet_num$day_of_week[items] = 1 # Sat
+  }
+  else if (capmet_num$day_of_week[items] == week_days[2]){
+    capmet_num$day_of_week[items] = 2 # Sun
+  }
+  else if (capmet_num$day_of_week[items] == week_days[3]){
+    capmet_num$day_of_week[items] = 3 # Mon
+  }
+  else if (capmet_num$day_of_week[items] == week_days[4]){
+    capmet_num$day_of_week[items] = 4 # Tue
+  }
+  else if (capmet_num$day_of_week[items] == week_days[5]){
+    capmet_num$day_of_week[items] = 5 # Wed
+  }
+  else if (capmet_num$day_of_week[items] == week_days[6]){
+    capmet_num$day_of_week[items] = 6 # Thu
+  }
+  else if (capmet_num$day_of_week[items] == week_days[7]){
+    capmet_num$day_of_week[items] = 7 # Fri
+  }
+}
+
+capmet_num$day_of_week = as.double(capmet_num$day_of_week)
+
+
+month_num = unique(capmet_num$month)
+month_num_len = length(month_num)
+
+
+for (items in (1: capmet_rows)){
+  if (capmet_num$month[items] == month_num[1]){
+    capmet_num$month[items] = 9 # Sep
+  }
+  else if (capmet_num$month[items] == month_num[2]){
+    capmet_num$month[items] = 10 # Oct
+  }
+  else if (capmet_num$month[items] == month_num[3]){
+    capmet_num$month[items] = 11 # Nov
+  }
+}
+
+capmet_num$month = as.double(capmet_num$month)
+
+
+day_type_num = unique(capmet_num$weekend)
+day_type_num_len = length(day_type_num)
+
+
+for (items in (1: capmet_rows)){
+  if (capmet_num$weekend[items] == day_type_num[1]){
+    capmet_num$weekend[items] = 1 # weekend
+  }
+  else if (capmet_num$weekend[items] == day_type_num[2]){
+    capmet_num$weekend[items] = 2 # weekday
+  }
+}
+
+capmet_num$weekend = as.double(capmet_num$weekend)
+
+
+head(capmet_num)
+```
+
+
+```{r echo = FALSE}
+# a look at the correlation matrix
+cor(capmet_num[2:capmet_cols])
+
+# a quick heatmap visualization
+ggcorrplot::ggcorrplot(cor(capmet_num[2:capmet_cols]))
+
+# reorder the variables by hierarchical clustering
+ggcorrplot::ggcorrplot(cor(capmet_num[2:capmet_cols]), hc.order = TRUE)
+
+
+```
+
+
+
+```{r include = FALSE}
+capmet_num = mutate(capmet_num, hour = hour(timestamp),
+                            min_of_day = 60*hour(timestamp) + minute(timestamp))
+```
+
+
+```{r echo = FALSE}
+ggplot(data=capmet_num) +
+  geom_boxplot(mapping=aes(x=factor(hour), y=boarding))
+
+
+```
+
+
+
+
+
+```{r include = FALSE}
+# # Question 5
+# # Portfolio modeling
+# 
+# # Import a few stocks
+mystocks = c("MRK", "JNJ", "SPY", "VTI", "GSLC")
+# 
+getSymbols(mystocks)
+# 
+# # Adjust for splits and dividends
+MRKa = adjustOHLC(MRK)
+JNJa = adjustOHLC(JNJ)
+SPYa = adjustOHLC(SPY)
+VTIa = adjustOHLC(VTI)
+GSLCa = adjustOHLC(GSLC)
+# 
+#
+```
+
+
+```{r echo = FALSE}
+# # Look at close-to-close changes
+plot(ClCl(MRKa))
+plot(ClCl(SPYa))
+plot(ClCl(GSLCa))
+#
+```
+
+
+```{r include = FALSE}
+# # Combine close to close changes in a single matrix
+all_returns = cbind(ClCl(MRKa),ClCl(JNJa),ClCl(SPYa),ClCl(VTIa),ClCl(GSLCa))
+head(all_returns)
+# # first row is NA because we didn't have a "before" in our data
+all_returns = as.matrix(na.omit(all_returns))
+N = nrow(all_returns)
+#
+```
+
+
+```{r echo = FALSE}
+# # These returns can be viewed as draws from the joint distribution
+# # strong correlation, but certainly not Gaussian!  
+pairs(all_returns)
+plot(all_returns[,1], type='l')
+# 
+# # Look at the market returns over time
+plot(all_returns[,3], type='l')
+# 
+# # are today's returns correlated with tomorrow's? 
+# # not really!   
+plot(all_returns[1:(N-1),3], all_returns[2:N,3])
+# 
+# # An autocorrelation plot: nothing there
+acf(all_returns[,3])
+# 
+# # conclusion: returns uncorrelated from one day to the next
+# # (makes sense, otherwise it'd be an easy inefficiency to exploit,
+# # and market inefficiencies that are exploited tend to disappear as a result)
+#
+```
+
+
+```{r include = FALSE}
+# #### Now use a bootstrap approach
+# #### With more stocks
+# 
+mystocks = c("MRK", "JNJ", "SPY", "VTI", "GSLC")
+myprices = getSymbols(mystocks, from = "2022-01-01", to = "2022-01-28")
+# 
+# 
+# # A chunk of code for adjusting all stocks
+# # creates a new object adding 'a' to the end
+
+for(ticker in mystocks) {
+  expr = paste0(ticker, "a = adjustOHLC(", ticker, ")")
+  eval(parse(text=expr))
+}
+
+head(SPYa)
+# 
+# # Combine all the returns in a matrix
+all_returns = cbind(ClCl(MRKa),
+                     ClCl(JNJa),
+                     ClCl(SPYa),
+                     ClCl(VTIa),
+                     ClCl(GSLCa))
+head(all_returns)
+all_returns = as.matrix(na.omit(all_returns))
+#
+```
+
+
+```{r echo = FALSE}
+# # Compute the returns from the closing prices
+pairs(all_returns)
+#
+```
+
+
+```{r include = FALSE}
+# # Sample a random return from the empirical joint distribution
+# # This simulates a random day
+return.today = resample(all_returns, 1, orig.ids=FALSE)
+# 
+# # Update the value of your holdings
+# # Assumes an equal allocation to each asset
+total_wealth = 100000
+my_weights = c(0.2,0.2,0.2, 0.2, 0.2)
+holdings = total_wealth*my_weights
+holdings = holdings*(1 + return.today)
+# 
+# # Compute your new total wealth
+holdings
+total_wealth = sum(holdings)
+total_wealth
+# 
+# # Now loop over two trading weeks
+# # let's run the following block of code 5 or 6 times
+# # to eyeball the variability in performance trajectories
+#
+```
+
+
+```{r echo = FALSE}
+# ## begin block
+total_wealth = 100000
+weights = c(0.2, 0.2, 0.2, 0.2, 0.2)
+holdings = weights * total_wealth
+n_days = 20  # capital T in the notes
+wealthtracker = rep(0, n_days) # Set up a placeholder to track total wealth
+for(today in 1:n_days) {
+  return.today = resample(all_returns, 1, orig.ids=FALSE)  # sampling from R matrix in notes
+  holdings = holdings + holdings*return.today
+  total_wealth = sum(holdings)
+  wealthtracker[today] = total_wealth
+}
+
+
+total_wealth
+plot(wealthtracker, type='l')
+# ## end block
+# 
+# # Now simulate many different possible futures
+# # just repeating the above block thousands of times
+initial_wealth = 100000
+sim1 = foreach(i=1:5000, .combine='rbind') %do% {
+  total_wealth = initial_wealth
+  weights = c(0.2, 0.2, 0.2, 0.2, 0.2)
+  holdings = weights * total_wealth
+  n_days = 20
+  wealthtracker = rep(0, n_days)
+  for(today in 1:n_days) {
+    return.today = resample(all_returns, 1, orig.ids=FALSE)
+    holdings = holdings + holdings*return.today
+    total_wealth = sum(holdings)
+    wealthtracker[today] = total_wealth
+  }
+  wealthtracker
+}
+# 
+# # each row is a simulated trajectory
+# # each column is a data
+head(sim1)
+```
+
+
+```{r echo = FALSE}
+hist(sim1[,n_days], 25)
+
+```
+
+
+```{r include = FALSE}
+# # Profit/loss
+mean(sim1[,n_days])
+mean(sim1[,n_days] - initial_wealth)
+```
+
+
+```{r echo = FALSE}
+hist(sim1[,n_days]- initial_wealth, breaks=30)
+# 
+# # 5% value at risk:
+quantile(sim1[,n_days]- initial_wealth, prob=0.05)
+#
+```
+
+
+```{r include = FALSE}
+# # note: this is  a negative number (a loss, e.g. -500), but we conventionally
+# # express VaR as a positive number (e.g. 500)
+
+
+
+
+```
+
+
+
+```{r include = FALSE}
+# Question 6
+
+# Clustering and PCA
+
+wine_data = read.csv('wine.csv')
+attach(wine_data)
+wine_df = data.frame(wine_data)
+# wine_df
+# head(wine_df)
+
+
+# library(tidyverse)
+# library(ggplot2)
+# 
+# # install.packages("ggcorrplot")
+# library(ggcorrplot)
+```
+
+
+```{r echo = FALSE}
+# predicted quality versus other parameters
+ggplot(wine_data) + 
+  geom_point(aes(x=fixed.acidity, y=quality, color=color))
+ggplot(wine_data) + 
+  geom_point(aes(x=volatile.acidity, y=quality, color=color))
+ggplot(wine_data) + 
+  geom_point(aes(x=citric.acid, y=quality, color=color))
+ggplot(wine_data) + 
+  geom_point(aes(x=residual.sugar, y=quality, color=color))
+ggplot(wine_data) + 
+  geom_point(aes(x=chlorides, y=quality, color=color))
+ggplot(wine_data) + 
+  geom_point(aes(x=free.sulfur.dioxide, y=quality, color=color))
+ggplot(wine_data) + 
+  geom_point(aes(x=total.sulfur.dioxide, y=quality, color=color))
+ggplot(wine_data) + 
+  geom_point(aes(x=density, y=quality, color=color))
+ggplot(wine_data) + 
+  geom_point(aes(x=pH, y=quality, color=color))
+ggplot(wine_data) + 
+  geom_point(aes(x=sulphates, y=quality, color=color))
+ggplot(wine_data) + 
+  geom_point(aes(x=alcohol, y=quality, color=color))
+```
+
+
+```{r include = FALSE}
+# there are lots of survey respondents
+# let's calculate an average response for each show, for each question,
+# across all respondents
+wine_results = wine_data %>%
+  group_by(quality) %>% 
+  select(-color) %>%
+  summarize_all(mean) %>%
+  column_to_rownames(var="quality")
+
+# now we have a tidy matrix of shows by questions
+# each entry is an average survey response
+head(wine_results)
+```
+
+
+```{r echo = FALSE}
+# a few quick plots
+ggplot(rownames_to_column(wine_results, "color")) + 
+  geom_col(aes(x=reorder(color, -alcohol), y = alcohol)) + 
+  coord_flip()
+
+ggplot(rownames_to_column(wine_results, "color")) + 
+  geom_col(aes(x=reorder(color, -residual.sugar), y = residual.sugar)) + 
+  coord_flip()
+
+# a look at the correlation matrix
+cor(wine_results)
+
+# a quick heatmap visualization
+ggcorrplot::ggcorrplot(cor(wine_results))
+
+# reorder the variables by hierarchical clustering
+ggcorrplot::ggcorrplot(cor(wine_results), hc.order = TRUE)
+```
+
+
+```{r include = FALSE}
+# Now look at PCA of the (average) survey responses.  
+# This is a common way to treat survey data
+PCAwine = prcomp(wine_results, scale=TRUE)
+```
+
+
+```{r echo = FALSE}
+## variance plot
+plot(PCAwine)
+summary(PCAwine)
+```
+
+
+```{r include = FALSE}
+round(PCAwine$rotation[,1:3],2)
+
+loadings_summary = PCAwine$rotation %>%
+  as.data.frame() %>%
+  rownames_to_column('Contents')
+
+loadings_summary %>%
+  select(Contents, PC1) %>%
+  arrange(desc(PC1))
+
+loadings_summary %>%
+  select(Contents, PC2) %>%
+  arrange(desc(PC2))
+
+loadings_summary %>%
+  select(Contents, PC3) %>%
+  arrange(desc(PC3))
+
+wine_data = merge(wine_data, PCAwine$x[,1:3], by="row.names")
+wine_data = rename(wine_data, Contents = Row.names)
+```
+
+
+```{r echo = FALSE}
+ggplot(wine_data) + 
+  geom_col(aes(x=reorder(Contents, PC1), y=PC1)) + 
+  coord_flip()
+
+ggplot(wine_data) + 
+  geom_col(aes(x=reorder(Contents, PC3), y=PC3)) + 
+  coord_flip()
+
+lm1 = lm(quality ~ PC1 + PC2 + PC3, data=wine_data)
+summary(lm1)
+
+
+
+```
+
+
+
+```{r include = FALSE}
+# Question 7
+# Market segmentation
+
+soc_med_data = read.csv('social_marketing.csv', row.names=1)
+# head(soc_med_data)
+# soc_med_data_rows = nrow(soc_med_data)
+# soc_med_data_cols = ncol(soc_med_data)
+
+soc_med_data_freq = soc_med_data/rowSums(soc_med_data)
+head(soc_med_data,5)
+```
+
+
+```{r echo = FALSE}
+hist(rowSums(soc_med_data), main="Histogram - number of tweets by user", xlab = "Number of tweets")
+
+
+```
+
+
+```{r echo = FALSE}
+summary(soc_med_data$chatter)
+summary(soc_med_data$spam)
+summary(soc_med_data$adult)
+
+
+
+# a look at the correlation matrix
+soc_med_corr = cor(soc_med_data)
+
+# a quick heatmap visualization
+ggcorrplot::ggcorrplot(cor(soc_med_data))
+
+# reorder the variables by hierarchical clustering
+ggcorrplot::ggcorrplot(cor(soc_med_data), hc.order = TRUE)
+```
+
+
+```{r include = FALSE}
+n_para = sqrt(length(soc_med_corr))
+
+soc_med_corr_sel = soc_med_corr
+
+for (iter_i in 1:n_para){
+  for (iter_j in 1:n_para){
+    if (abs(soc_med_corr[iter_i,iter_j]) > 0.50){
+      soc_med_corr_sel[iter_i,iter_j] = round(as.double(soc_med_corr[iter_i,iter_j]),2)
+    }
+    else{
+      soc_med_corr_sel[iter_i,iter_j] = round(as.double(0.00),2)
+    }
+  }
+}
+```
+
+
+```{r echo = FALSE}
+soc_med_corr_sel
+
+
+# a quick heatmap visualization
+ggcorrplot::ggcorrplot(soc_med_corr_sel)
+
+# reorder the variables by hierarchical clustering
+ggcorrplot::ggcorrplot(soc_med_corr_sel, hc.order = TRUE)
+
+
+```
+
+
+```{r echo = FALSE}
+
+cat("High correlations are found between:
+    (1) shopping, chatter and photo_sharing
+    (2) politics, travel and computers
+    (3) parenting, religion, sports_fandom and food
+    (4) automotive and news
+    (5) college_uni and online_gaming
+    (6) personal_fitness, health_nutrition and outdoors
+    (7) fashion, cooking and beauty")
+
+```
+
+```{r echo = FALSE}
+
+plot(soc_med_data$shopping, soc_med_data$photo_sharing)
+
+plot(soc_med_data$politics, soc_med_data$travel)
+plot(soc_med_data$politics, soc_med_data$computers)
+plot(soc_med_data$travel, soc_med_data$computers)
+
+plot(soc_med_data$parenting, soc_med_data$religion)
+plot(soc_med_data$parenting, soc_med_data$sports_fandom)
+plot(soc_med_data$parenting, soc_med_data$food)
+plot(soc_med_data$religion, soc_med_data$sports_fandom)
+plot(soc_med_data$religion, soc_med_data$food)
+plot(soc_med_data$sports_fandom, soc_med_data$food)
+
+plot(soc_med_data$automotive, soc_med_data$news)
+
+plot(soc_med_data$college_uni, soc_med_data$online_gaming)
+
+plot(soc_med_data$personal_fitness, soc_med_data$health_nutrition)
+plot(soc_med_data$personal_fitness, soc_med_data$outdoors)
+plot(soc_med_data$health_nutrition, soc_med_data$outdoors)
+
+plot(soc_med_data$fashion, soc_med_data$cooking)
+plot(soc_med_data$fashion, soc_med_data$beauty)
+plot(soc_med_data$cooking, soc_med_data$beauty)
+
+```
+
+
+```{r include = FALSE}
+summary(soc_med_data)
+
+# Center and scale the data
+X = soc_med_data[(2:34)]
+X = scale(X, center=TRUE, scale=TRUE)
+
+# Extract the centers and scales from the rescaled data (which are named attributes)
+mu = attr(X,"scaled:center")
+sigma = attr(X,"scaled:scale")
+
+# Run k-means with 6 clusters and 25 starts
+clust1 = kmeans(X, 6, nstart=25)
+
+# What are the clusters?
+clust1$center  # not super helpful
+clust1$center %>% round(3)
+clust1$center[1,]*sigma + mu
+clust1$center[2,]*sigma + mu
+clust1$center[4,]*sigma + mu
+clust1$center[6,]*sigma + mu
+
+
+# Which users are in which clusters?
+which(clust1$cluster == 1)
+which(clust1$cluster == 2)
+which(clust1$cluster == 3)
+which(clust1$cluster == 4)
+which(clust1$cluster == 5)
+which(clust1$cluster == 6)
+
+
+# High correlations are found between:
+#     (1) shopping, chatter and photo_sharing
+#     (2) politics, travel and computers
+#     (3) parenting, religion, sports_fandom and food
+#     (4) automotive and news
+#     (5) college_uni and online_gaming
+#     (6) personal_fitness, health_nutrition and outdoors
+#     (7) fashion, cooking and beauty
+```
+
+
+```{r echo = FALSE}
+# A few plots with cluster membership shown
+# qplot is in the ggplot2 library
+qplot(shopping, photo_sharing, data=soc_med_data, color=factor(clust1$cluster))
+qplot(politics, travel, data=soc_med_data, color=factor(clust1$cluster))
+```
+
+
+```{r include = FALSE}
+# Using kmeans++ initialization
+# clust2 = KMeans_rcpp(X, k=6, nstart=25)
+clust2 = KMeans_rcpp(data=X, clusters=6, num_init=25)
+
+clust2$center[1,]*sigma + mu
+clust2$center[2,]*sigma + mu
+clust2$center[4,]*sigma + mu
+
+# Which cars are in which clusters?
+which(clust2$cluster == 1)
+which(clust2$cluster == 2)
+which(clust2$cluster == 3)
+
+# Compare versus within-cluster average distances from the first run
+clust1$withinss  # each summand in SSE_W on slide 28
+clust2$withinss
+sum(clust1$withinss)
+sum(clust2$withinss)
+clust1$tot.withinss
+clust2$tot.withinss
+clust1$betweenss
+clust2$betweenss
+
+
+```
+
+
+
+```{r include  = FALSE}
+# Question 8
+# The Reuters corpus
+
+
+# library(tm) 
+# library(magrittr)
+# library(slam)
+# library(proxy)
+# library(tidytext)
+# library(textstem)
+## tm has many "reader" functions.  Each one has
+## arguments elem, language, id
+## (see ?readPlain, ?readPDF, ?readXML, etc)
+## This wraps another function around readPlain to read plain text documents in English.
+readerPlain = function(fname){
+  readPlain(elem=list(content=readLines(fname)), 
+            id=fname, language='en') }
+
+file_list = Sys.glob('data/ReutersC50/C50train/*/*.txt')
+raw.data = lapply(file_list, readerPlain) 
+#raw.data
+
+
+
+
+
+```
+
+# Pre-processing data: *
+
+# All the files will be taken to be used for training and store their names in 'file_list'
+
+# As the data does not have the column name for the Author name, the file name will be used to extract it
+
+```{r include  = FALSE}
+# Function to split the path name by '/'
+extract_author <- function(x) {
+  strsplit(x, "/")
+}
+
+#Make a dataframe with the author names of each document
+df = as.data.frame(lapply(extract_author(file_list), function(x) x[length(x) - 1] ))
+author <- t(df)
+rownames(author)<-seq(1,2500)
+#author
+
+
+```
+
+# Cleaning up the file name using piping operator from magrittr
+
+```{r include  = FALSE}
+mynames = file_list %>%
+  { strsplit(., '/', fixed=TRUE) } %>%
+  { lapply(., tail, n=2) } %>%
+  { lapply(., paste0, collapse = '') } %>%
+  unlist
+
+# Rename the articles
+#mynames
+names(raw.data) = mynames
+
+
+
+```
+
+
+# Some pre-processing/tokenization steps uses tm_map which maps some function to every document in the corpus
+
+# Using this we make everything lowercase, remove numbers, punctuations, excess white spaces and stopwords
+
+```{r echo  = FALSE}
+documents_raw = Corpus(VectorSource(raw.data))
+
+my_documents = documents_raw
+my_documents = tm_map(my_documents, content_transformer(tolower)) # make everything lowercase
+my_documents = tm_map(my_documents, content_transformer(removeNumbers)) # remove numbers
+my_documents = tm_map(my_documents, content_transformer(removePunctuation)) # remove punctuation
+my_documents = tm_map(my_documents, content_transformer(stripWhitespace)) ## remove excess white-space
+my_documents = tm_map(my_documents, content_transformer(removeWords), stopwords("en"))
+my_documents = tm_map(my_documents, content_transformer(stemDocument))
+
+
+
+```
+
+# Creating a doc-term-matrix
+
+```{r include  = FALSE}
+DTM_raw = DocumentTermMatrix(my_documents)
+DTM_raw # some basic summary statistics
+class(DTM_raw)  # a special kind of sparse matrix format
+
+
+
+```
+
+# Removing rare terms
+
+# Removing those terms that have count 0 in >97% of docs.
+
+```{r echo = FALSE}
+DTM_raw = removeSparseTerms(DTM_raw, 0.97)
+DTM_raw 
+
+
+
+```
+
+# Constructing TF IDF weights
+
+```{r include = FALSE}
+
+# construct TF IDF weights
+tfidf_raw = weightTfIdf(DTM_raw)
+tfidf_raw
+
+
+
+```
+
+
+```{r include = FALSE}
+train.data <- data.frame(as.matrix(tfidf_raw), stringsAsFactors=FALSE)
+#Merge with author names
+train.data <- merge(train.data,author,by =0)
+train.data$V1 <- as.factor(train.data$V1)
+
+
+
+
+```
+
+# Repeating the above steps to obtain the test data
+
+```{r echo = FALSE}
+file_list = Sys.glob('data/ReutersC50/C50test/*/*.txt')
+raw.data = lapply(file_list, readerPlain) 
+
+df = as.data.frame(lapply(extract_author(file_list), function(x) x[length(x) - 1] ))
+author <- t(df)
+rownames(author)<-seq(1,2500)
+#author
+
+# Clean up the file names
+mynames = file_list %>%
+  { strsplit(., '/', fixed=TRUE) } %>%
+  { lapply(., tail, n=2) } %>%
+  { lapply(., paste0, collapse = '') } %>%
+  unlist
+
+# Rename the articles
+names(raw.data) = mynames
+
+documents_raw = Corpus(VectorSource(raw.data))
+
+my_documents = documents_raw
+my_documents = tm_map(my_documents, content_transformer(tolower)) # make everything lowercase
+my_documents = tm_map(my_documents, content_transformer(removeNumbers)) # remove numbers
+my_documents = tm_map(my_documents, content_transformer(removePunctuation)) # remove punctuation
+my_documents = tm_map(my_documents, content_transformer(stripWhitespace)) ## remove excess white-space
+my_documents = tm_map(my_documents, content_transformer(removeWords), stopwords("en"))
+my_documents = tm_map(my_documents, content_transformer(stemDocument))
+
+## create a doc-term-matrix
+DTM_raw = DocumentTermMatrix(my_documents)
+DTM_raw # some basic summary statistics
+class(DTM_raw)  # a special kind of sparse matrix format
+
+DTM_raw = removeSparseTerms(DTM_raw, 0.97)
+DTM_raw 
+
+# construct TF IDF weights
+tfidf_raw = weightTfIdf(DTM_raw)
+tfidf_raw
+
+test.data <- data.frame(as.matrix(tfidf_raw), stringsAsFactors=FALSE)
+#Merge with author names
+test.data <- merge(test.data,author,by =0)
+
+
+# We ignore words in the test set that are not present in the train set
+
+
+```
+
+
+```{r echo = FALSE}
+library(tidyverse)
+v1 <- c(names(train.data))
+v2 <- c(names(test.data))
+xc <- intersect(v1,v2)
+
+new_test <- test.data %>% select(xc)
+new_train<-train.data %>% select(xc)
+
+
+# 
+
+
+```
+
+* Running Random Forest on the Train Data *
+```{r echo = FALSE}
+library("randomForest")
+set.seed(12)
+train_rf = randomForest(new_train$V1~., data=new_train, ntree=37, proximity=T)
+train_rf
+
+plot(train_rf)
+#importance(train_rf)
+
+
+
+
+
+
+```
+
+* Running the model on the Test Data *
+```{r echo = FALSE}
+
+#Checking model on test data
+
+testPred = predict(train_rf, newdata=new_test, type = 'class')
+#table(testPred, test.data$V1)
+
+CM = table(testPred, new_test$V1)
+accuracy = (sum(diag(CM)))/sum(CM)
+accuracy
+```
+
+
+```{r include = FALSE}
+# Trying different values of top features to see if performance improves. 
+
+
+importanceOrder=order(-train_rf$importance)
+topnames=rownames(train_rf$importance)[importanceOrder][2:151]
+topnames = append(topnames,"V1")
+
+top_test <- test.data %>% select(all_of(topnames))
+top_train<-train.data %>% select(all_of(topnames))
+
+
+
+
+```
+
+* Running Random Forest on Train data
+```{r include = FALSE}
+library("randomForest")
+set.seed(1)
+toptrain_rf = randomForest(top_train$V1~., data=top_train, ntree=37, proximity=T)
+#table(predict(train_rf), train.data$V1)
+#train_rf
+plot(toptrain_rf)
+```
+
+
+* Checking model on test data *
+```{r include = FALSE}
+toptestPred = predict(toptrain_rf, newdata=top_test, type = 'class')
+#table(testPred, test.data$V1)
+
+CM = table(toptestPred, top_test$V1)
+accuracy = (sum(diag(CM)))/sum(CM)
+accuracy
+
+
+
+
+```
+
+
+
+* The performance does not improve that much for various values used to subset features.
+
+* Summary of the Process: *
+
+* We first extract the author name from the file paths.
+
+* Next, we clean the file names and pre-process it in the following order: 
+a) Join all files and convert into one corpus. This corpus will have rows as each document.
+b) Tokenize the documents(split each document into separate words) and convert to lower case 
+c)Remove numbers, punctuation, extra white spaces and stop words (Words like 'as','the','so' do not add much meaning to the sentence without context. Hence we remove them to reduce any noise in the data) from the document
+d) Stemming (Words such as 'run' and 'running' essentially mean the same. So in stemming, we take each word and use it's root value. In this example, our root value will be 'run')
+
+* We convert the output from step 3 to a sparse matrix. Rows in a sparse matrix represent data for each document. The columns in the sparse matrix represent each word identified after Step 2. The values for a particular row, column in the matrix is the number of times the word appears in the particular document.
+
+* We drop terms that may occur only once or twice in the documents. This further removes some noise from the data and reduces number of features.
+
+* Some texts can be small while some can be large. To compare several texts, the frequency of each word relative to the length of the text is more helpful than the count of each word in the text. We thus use the TF IDF values for this Purpose. So we replace values in the sparse matrix to TF IDF scores.
+
+* We then merge the author names with output from 5 to get train data.
+
+* Repeat steps 1 to step 6 using test data.
+
+* We ignore words present in the test set but not in the train set. 
+
+* Using an intersection of words between train and test set, We now run Random Forest for classification to get accuracy of 70.8%.
+
+* We try using a number of most important features to reduce dimensionality. However, this does not improve the performance.
+
+
+
+```{r include = FALSE}
+# Question 9
+# Association Rule Mining
+
+# library(tidyverse)
+# library(igraph)
+# library(arules)  # has a big ecosystem of packages built around it
+# library(arulesViz)
+
+# Association rule mining
+# Adapted from code by Matt Taddy
+
+# Read in playlists from users
+# This is in "long" format -- every row is a single artist-listener pair
+# groceries_raw = read.csv("groceries.txt",header=FALSE, sep=",")
+
+# groceries_data = read.table("groceries.txt", header=FALSE, sep=",")
+
+groceries_data = read.transactions(
+  "groceries.txt",
+  format = c("basket", "single"),
+  header = FALSE,
+  sep = ",",
+  cols = NULL,
+  rm.duplicates = FALSE,
+  quote = "\"'",
+  skip = 0,
+  encoding = "unknown"
+)
+```
+
+
+```{r include = FALSE}
+# inspect(groceries_data)
+
+# str(groceries_raw)
+# summary(groceries_raw)
+summary(groceries_data)
+```
+
+
+```{r echo = FALSE}
+## Cast this variable as a special arules "transactions" class.
+groceries = as(groceries_data, "transactions")
+summary(groceries)
+```
+
+
+```{r include = FALSE}
+# Now run the 'apriori' algorithm
+# Look at rules with support > .005 & confidence >.1 & length (# artists) <= 4
+groceriesrules = apriori(groceries, 
+                     parameter=list(support=.005, confidence=.1, maxlen=4))
+```
+
+
+```{r echo = FALSE}
+# Look at the output... so many rules!
+# # detach(package:tm, unload=TRUE)
+# library(arules)
+# inspect(groceriesrules)
+
+## Choose a subset
+# inspect(subset(groceriesrules, subset=lift > 5))
+# inspect(subset(groceriesrules, subset=confidence > 0.6))
+# inspect(subset(groceriesrules, subset=lift > 10 & confidence > 0.5))
+
+# plot all the rules in (support, confidence) space
+# notice that high lift rules tend to have low support
+plot(groceriesrules, jitter = 0)
+
+# can swap the axes and color scales
+plot(groceriesrules, measure = c("support", "lift"), shading = "confidence", jitter = 0)
+
+# "two key" plot: coloring is by size (order) of item set
+plot(groceriesrules, method='two-key plot', jitter = 0)
+
+# can now look at subsets driven by the plot
+# inspect(subset(groceriesrules, support > 0.035))
+# inspect(subset(groceriesrules, confidence > 0.6))
+# inspect(subset(groceriesrules, lift > 20))
+```
+
+
+```{r include = FALSE}
+# graph-based visualization
+# export
+# associations are represented as edges
+# For rules, each item in the LHS is connected
+# with a directed edge to the item in the RHS. 
+groceries_graph = associations2igraph(subset(groceriesrules, lift>2), associationsAsNodes = FALSE)
+igraph::write_graph(groceries_graph, file='groceries.graphml', format = "graphml")
+
+
+
+
+
+```
+
+
+
